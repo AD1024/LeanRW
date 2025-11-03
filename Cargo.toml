@@ -1,0 +1,9 @@
+[package]
+name = "LeanRW"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+slotted-egraphs = {git = "https://github.com/AD1024/slotted-egraphs.git", branch = "main" }
