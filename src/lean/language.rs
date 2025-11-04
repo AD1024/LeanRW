@@ -6,12 +6,22 @@ define_language! {
         Lam(Bind<AppliedId>) = "Fun",
         App(AppliedId, AppliedId) = "App",
         Var(Slot) = "Var",
-        Let(AppliedId, Bind<AppliedId>) = "Let",
+        
+        // let name := value
+        // body
+        Let(Bind<AppliedId>, AppliedId) = "Let",
+
+        // Pattern Matching
         Match(AppliedId, AppliedId) = "Match",
         // `case PAT BODY NEXT`
         Case(AppliedId, AppliedId, AppliedId) = "Case",
         MatchEnd() = "MatchEnd",
         IfThenElse(AppliedId, AppliedId, AppliedId) = "IfThen",
+
+        // // ParamList
+        // ParamNil() = "ParamNil",
+        // ParamCons(AppliedId, AppliedId) = "ParamCons",
+        // Param(AppliedId, AppliedId) = "Param",
 
         // List
         Nil() = "Nil",
