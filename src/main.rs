@@ -1,4 +1,6 @@
 mod lean;
+mod rewrites;
+mod extraction;
 
 use lean::{Lean, write_lean};
 use slotted_egraphs::*;

@@ -2,7 +2,17 @@ use slotted_egraphs::*;
 
 define_language! {
     pub enum Lean {
-        FunDef(Bind<AppliedId>) = "Def",
+        // Function defs
+        // (def <name> <ret type> <arg | body>)
+        FunDef(AppliedId, AppliedId, AppliedId) = "Def",
+        // (arg <type> <arg> <body | args>)
+        FunArg(AppliedId, Bind<AppliedId>) = "Arg",
+        // (Begin <body>)
+        FunBody(AppliedId) = "Begin",
+        // E.g., a max function can be written as:
+        // (Def max Nat (Arg Nat $x (Arg Nat $y (Begin (IfThen (> (Var $x) (Var $y) (Var $x) (Var $y)))))))
+
+        // Lambdas
         Lam(Bind<AppliedId>) = "Fun",
         App(AppliedId, AppliedId) = "App",
         Var(Slot) = "Var",
@@ -17,11 +27,6 @@ define_language! {
         Case(AppliedId, AppliedId, AppliedId) = "Case",
         MatchEnd() = "MatchEnd",
         IfThenElse(AppliedId, AppliedId, AppliedId) = "IfThen",
-
-        // // ParamList
-        // ParamNil() = "ParamNil",
-        // ParamCons(AppliedId, AppliedId) = "ParamCons",
-        // Param(AppliedId, AppliedId) = "Param",
 
         // List
         Nil() = "Nil",
@@ -71,7 +76,7 @@ define_language! {
 }
 
 // A dummy analysis for now: we only want to run eqsat on function defs
-struct LeanAnalysis;
+pub struct LeanAnalysis;
 
 impl Analysis<Lean> for LeanAnalysis {
     type Data = ();

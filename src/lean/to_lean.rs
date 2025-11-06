@@ -34,30 +34,82 @@ impl LeanWriter {
         }
     }
 
+    // Helper to collect function arguments from nested FunArg nodes
+    // Returns (args_strings, body_expr) where args_strings are "(name : type)" strings
+    fn collect_args<'a>(&mut self, expr: &'a RecExpr<Lean>) -> (Vec<String>, &'a RecExpr<Lean>) {
+        match &expr.node {
+            Lean::FunArg(_, bind) => {
+                assert!(
+                    expr.children.len() == 2,
+                    "FunArg must have exactly 2 children (type, body_or_args), got {}",
+                    expr.children.len()
+                );
+                let var_name = Self::clean_slot_name(format!("{:?}", bind.slot));
+                let ty = self.write_expr(&expr.children[0]);
+                let arg_string = format!("({} : {})", var_name, ty);
+
+                // Recursively collect more args or return body
+                let (mut rest_args, body) = self.collect_args(&expr.children[1]);
+                let mut all_args = vec![arg_string];
+                all_args.append(&mut rest_args);
+                (all_args, body)
+            }
+            _ => {
+                // Not a FunArg, so this is the body
+                (vec![], expr)
+            }
+        }
+    }
+
     fn write_expr(&mut self, expr: &RecExpr<Lean>) -> String {
         let hd = &expr.node;
         let children = &expr.children;
 
         match hd {
-            // Top-level definition
-            Lean::FunDef(bind) => {
-                let name = Self::clean_slot_name(format!("{:?}", bind.slot));
-                let mut result = format!("def {}", name);
+            // Top-level definition: (Def name ret_type arg_or_body)
+            Lean::FunDef(_, _, _) => {
+                assert!(
+                    children.len() == 3,
+                    "FunDef must have exactly 3 children (name, ret_type, arg_or_body), got {}",
+                    children.len()
+                );
+                let name = self.write_expr(&children[0]);
+                let ret_type = self.write_expr(&children[1]);
 
-                if !children.is_empty() {
-                    result.push_str(" :=\n");
-                    self.indent += 1;
-                    for child in children {
-                        self.write_indent();
-                        let child_str = self.write_expr(child);
-                        result.push_str(&child_str);
-                        result.push('\n');
-                    }
-                    self.indent -= 1;
-                } else {
-                    result.push_str(" := ()\n");
+                // Collect arguments from nested FunArg nodes
+                let (args, body_expr) = self.collect_args(&children[2]);
+
+                // Build function signature with args
+                let mut signature = format!("def {}", name);
+                for arg in &args {
+                    signature.push(' ');
+                    signature.push_str(arg);
                 }
-                result
+                signature.push_str(&format!(" : {} :=", ret_type));
+
+                // Write body with indentation
+                self.indent += 1;
+                let body = self.write_expr(body_expr);
+                let indent_str = self.get_indent();
+                self.indent -= 1;
+
+                format!("{}\n{}{}", signature, indent_str, body)
+            }
+
+            // Function argument: (Arg type (bind var) body_or_args)
+            // This should only be encountered when called from collect_args
+            Lean::FunArg(_, _) => {
+                panic!("FunArg should be processed via collect_args in FunDef context")
+            }
+
+            // Function body wrapper: (Begin body)
+            Lean::FunBody(_) => {
+                assert!(
+                    children.len() == 1,
+                    "FunBody must have exactly 1 child (body), got {}",
+                    children.len()
+                );
+                self.write_expr(&children[0])
             }
 
             // Lambda abstraction
@@ -381,11 +433,12 @@ mod tests {
 
     #[test]
     fn test_function_def() {
-        let expr: RecExpr<Lean> = RecExpr::parse("(Def $foo (+ 1 2))").unwrap();
+        // Updated to match new FunDef structure: (Def name ret_type body)
+        let expr: RecExpr<Lean> = RecExpr::parse("(Def foo Nat (Begin (+ 1 2)))").unwrap();
         let result = write_lean(&expr);
         println!("Function def:\n{}", result);
         assert!(result.contains("def foo"));
-        assert!(result.contains(":="));
+        assert!(result.contains(": Nat :="));
         assert!(!result.contains("$foo")); // No $ prefix
     }
 
@@ -422,5 +475,43 @@ mod tests {
         // The inner match's cases should have 4 spaces (2 more than outer)
         let has_nested_case = lines.iter().any(|l| l.starts_with("    | "));
         assert!(has_nested_case, "Nested match cases should be indented 4 spaces");
+    }
+
+    #[test]
+    fn test_function_def_with_args() {
+        // Test the example from language.rs comment:
+        // (Def max Nat (Arg Nat $x (Arg Nat $y (Begin (IfThen (> (Var $x) (Var $y)) (Var $x) (Var $y))))))
+        let expr: RecExpr<Lean> = RecExpr::parse(
+            "(Def max Nat (Arg Nat $x (Arg Nat $y (Begin (IfThen (> (Var $x) (Var $y)) (Var $x) (Var $y))))))"
+        )
+        .unwrap();
+        let result = write_lean(&expr);
+        println!("Function with args:\n{}", result);
+
+        // Arguments should be in the function signature, not as lambdas
+        assert!(result.contains("def max (x : Nat) (y : Nat) : Nat :="));
+        assert!(!result.contains("fun")); // Should not have lambda abstractions
+        assert!(result.contains("if"));
+        assert!(result.contains("then"));
+        assert!(result.contains("else"));
+        assert!(!result.contains("$x")); // Variables should not have $ prefix
+        assert!(!result.contains("$y"));
+    }
+
+    #[test]
+    fn test_list_reverse_def() {
+        let expr: RecExpr<Lean> = RecExpr::parse(
+            "(Def reverse (App List Nat) (Arg (App List Nat) $lst (Begin
+                (Match (Var $lst)
+                    (Case Nil Nil
+                        (Case (Cons h t)
+                            (App (App append (App reverse t)) (Cons h Nil))
+                        MatchEnd))
+                )
+            )))"
+        )
+        .unwrap();
+        let result = write_lean(&expr);
+        println!("List reverse function:\n{}", result);
     }
 }
