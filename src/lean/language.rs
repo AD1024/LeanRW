@@ -31,6 +31,8 @@ define_language! {
         // List
         Nil() = "Nil",
         Cons(AppliedId, AppliedId) = "Cons",
+        Length(AppliedId) = "Length",
+        Fold(AppliedId, AppliedId, AppliedId) = "Fold",
 
         // Trees
         Leaf(AppliedId) = "Leaf",

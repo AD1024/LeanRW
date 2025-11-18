@@ -189,6 +189,15 @@ fn list_rules() -> Vec<Rewrite<Lean, LeanAnalysis>> {
 
         // Cons pattern simplification
         rw!("singleton-cons"; "(Cons ?x Nil)" => "(Cons ?x Nil)"),
+
+        rw!("cons-length"; "(Length (Cons ?h ?t))" => "1 + (Length ?t)"),
+        rw!("singleton-length"; "(Length ?h)" => "1"),
+
+        rw!("nil-length"; "(Length Nil )" => "0"),
+        rw!("singleton-length"; "(Length ?h)" => "1"),
+        rw!("singleton-length"; "(Length ?h)" => "1"),
+        rw!("singleton-length"; "(Length ?h)" => "1"),
+
     ]
 }
 

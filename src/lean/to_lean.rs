@@ -225,6 +225,24 @@ impl LeanWriter {
                     "[]".to_string()
                 }
             }
+            Lean::Length(_) => {
+                if children.len() >= 1 {
+                    let head = self.write_expr(&children[0]);
+                    format!("({}.length )", head)
+                } else {
+                    "List.Length []".to_string()
+                }
+            }
+            Lean::Fold(_, _, _) => {
+                if children.len() >= 3 {
+                    let head = self.write_expr(&children[0]);
+                    let tail = self.write_expr(&children[1]);
+                    let z = self.write_expr(&children[2]);
+                    format!("({}.foldl {} {})", head, tail, z)
+                } else {
+                    "[]".to_string()
+                }
+            }
 
             // Tree constructors
             Lean::Leaf(_) => {

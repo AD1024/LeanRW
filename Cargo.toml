@@ -4,6 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[build-dependencies]
+cc="*"
 
 [dependencies]
 slotted-egraphs = {git = "https://github.com/AD1024/slotted-egraphs.git", branch = "main" }
+tree-sitter = "0.25"
+tree-sitter-rust = "0.24"
+libloading = "0.8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
