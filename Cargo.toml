@@ -8,6 +8,8 @@ edition = "2021"
 cc="*"
 
 [dependencies]
+#slotted-egraphs = { path = "/Users/mikehe/Documents/Princeton/LeanCodeVerif/slotted-egraphs" }
+egraph-serialize = "0.3.0"
 slotted-egraphs = {git = "https://github.com/AD1024/slotted-egraphs.git", branch = "main" }
 tree-sitter = "0.25"
 tree-sitter-rust = "0.24"
