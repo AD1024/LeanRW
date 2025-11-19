@@ -1,4 +1,4 @@
-mod language;
+pub mod language;
 mod to_lean;
 
 pub use language::*;

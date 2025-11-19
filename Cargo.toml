@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 slotted-egraphs = {git = "https://github.com/AD1024/slotted-egraphs.git", branch = "main" }
+egraph-serialize = "0.3.0"
