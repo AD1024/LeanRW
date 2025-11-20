@@ -275,6 +275,13 @@ impl LeanWriter {
                 }
             }
 
+            Lean::Proj(_, _) => {
+                assert!(children.len() == 2, "Proj must have exactly 2 children: (expr, field), got {}", children.len());
+                let expr_str = self.write_expr(&children[0]);
+                let field_str = self.write_expr(&children[1]);
+                format!("({}.{})", expr_str, field_str)
+            }
+
             // Arithmetic operations
             Lean::Add(_, _) => self.write_binop(children, "+"),
             Lean::Sub(_, _) => self.write_binop(children, "-"),
@@ -302,6 +309,13 @@ impl LeanWriter {
                 }
             }
 
+            // Infix ops
+            Lean::InfixOp(_, _, _) => {
+                assert!(children.len() == 3, "InfixOp must have exactly 3 children: (left, op, right), got {}", children.len());
+                let op = self.write_expr(&children[0]);
+                self.write_binop(&children[1..], &op)
+            }
+
             // Propositional operations
             Lean::Implies(_, _) => self.write_binop(children, "→"),
             Lean::Iff(_, _) => self.write_binop(children, "↔"),
@@ -319,18 +333,18 @@ impl LeanWriter {
                 let var_name = Self::clean_slot_name(format!("{:?}", bind.slot));
                 if !children.is_empty() {
                     let body = self.write_expr(&children[0]);
-                    format!("∀ {}, {}", var_name, body)
+                    format!("(∀ {}, {})", var_name, body)
                 } else {
-                    format!("∀ {}, true", var_name)
+                    panic!("Forall must have a body");
                 }
             }
             Lean::Exists(bind) => {
                 let var_name = Self::clean_slot_name(format!("{:?}", bind.slot));
                 if !children.is_empty() {
                     let body = self.write_expr(&children[0]);
-                    format!("∃ {}, {}", var_name, body)
+                    format!("(∃ {}, {})", var_name, body)
                 } else {
-                    format!("∃ {}, true", var_name)
+                    panic!("Exists must have a body");
                 }
             }
 

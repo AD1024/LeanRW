@@ -74,6 +74,11 @@ define_language! {
         Bool(bool),
         Nat(u64),
         Symbol(Symbol),
+
+        // (Proj term field)
+        Proj(AppliedId, AppliedId) = "Proj",
+        // (Infix op left right)
+        InfixOp(AppliedId, AppliedId, AppliedId) = "Infix"
     }
 }
 
