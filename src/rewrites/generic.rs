@@ -93,10 +93,6 @@ fn bool_rules() -> Vec<Rewrite<Lean, LeanAnalysis>> {
         rw!("de-morgan-and-rev"; "(| (not ?a) (not ?b))" => "(not (& ?a ?b))"),
         rw!("de-morgan-or-rev"; "(& (not ?a) (not ?b))" => "(not (| ?a ?b))"),
 
-        // Double negation
-        rw!("double-neg"; "(not (not ?a))" => "?a"),
-        rw!("double-neg-rev"; "?a" => "(not (not ?a))"),
-
         // Distributivity
         rw!("and-over-or"; "(& ?a (| ?b ?c))" => "(| (& ?a ?b) (& ?a ?c))"),
         rw!("or-over-and"; "(| ?a (& ?b ?c))" => "(& (| ?a ?b) (| ?a ?c))"),
@@ -175,24 +171,6 @@ fn control_flow_rules() -> Vec<Rewrite<Lean, LeanAnalysis>> {
 }
 
 // ============================================================================
-// List Transformation Rules - Structural rewrites
-// ============================================================================
-
-fn list_rules() -> Vec<Rewrite<Lean, LeanAnalysis>> {
-    vec![
-        // Cons-Nil identity
-        rw!("cons-nil-match"; "(Match (Cons ?h ?t) (Case Nil ?nil_case (Case (Cons ?x ?xs) ?cons_case MatchEnd)))" =>
-            "(Let $x ?h (Let $xs ?t ?cons_case))"),
-
-        // Empty list match simplification
-        rw!("nil-match"; "(Match Nil (Case Nil ?body (Case (Cons ?h ?t) ?other MatchEnd)))" => "?body"),
-
-        // Cons pattern simplification
-        rw!("singleton-cons"; "(Cons ?x Nil)" => "(Cons ?x Nil)"),
-    ]
-}
-
-// ============================================================================
 // Lambda Calculus / Function Application Rules
 // ============================================================================
 
@@ -200,12 +178,6 @@ fn lambda_rules() -> Vec<Rewrite<Lean, LeanAnalysis>> {
     vec![
         // Beta reduction (application of lambda)
         rw!("beta-reduce"; "(App (Fun $x ?body) ?arg)" => "(Let $x ?arg ?body)"),
-
-        // Eta expansion/reduction
-        rw!("eta-expand"; "?f" => "(Fun $x (App ?f (Var $x)))"),
-
-        // Application associativity (currying)
-        rw!("app-assoc"; "(App (App ?f ?x) ?y)" => "(App ?f (App ?x ?y))"),
     ]
 }
 
@@ -256,7 +228,6 @@ pub fn all_rules() -> Vec<Rewrite<Lean, LeanAnalysis>> {
     rules.extend(bool_rules());
     rules.extend(prop_rules());
     rules.extend(control_flow_rules());
-    rules.extend(list_rules());
     rules.extend(lambda_rules());
     rules.extend(let_rules());
     rules.extend(option_rules());
@@ -271,7 +242,6 @@ pub fn get_rules_by_category(category: &str) -> Vec<Rewrite<Lean, LeanAnalysis>>
         "bool" => bool_rules(),
         "prop" => prop_rules(),
         "control_flow" => control_flow_rules(),
-        "list" => list_rules(),
         "lambda" => lambda_rules(),
         "let" => let_rules(),
         "option" => option_rules(),
@@ -511,19 +481,6 @@ mod tests {
             option_rules(),
             "(Match (Some val) (Case None none_case (Case (Some x) some_case MatchEnd)))",
             "(Let $x val some_case)",
-        );
-    }
-
-    // ========================================================================
-    // List Tests
-    // ========================================================================
-
-    #[test]
-    fn test_nil_match() {
-        test_rewrite(
-            list_rules(),
-            "(Match Nil (Case Nil empty_result (Case (Cons h t) cons_result MatchEnd)))",
-            "empty_result",
         );
     }
 
