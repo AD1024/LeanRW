@@ -349,7 +349,6 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 [[package]]
 name = "slotted-egraphs"
 version = "0.0.36"
-source = "git+https://github.com/AD1024/slotted-egraphs.git?branch=main#7d65bd97a41bfdad9daf411d1e01e67c343e702b"
 dependencies = [
  "itertools",
  "rustc-hash",
